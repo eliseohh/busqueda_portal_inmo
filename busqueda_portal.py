@@ -7,8 +7,11 @@ import pandas as pd
 
 # %%
 #Se crea una serie con las comunas que se deseea explorar
+#,"Ñuñoa, RM (Metropolitana)"
+#
+comuna=["Providencia, RM (Metropolitana)","Las Condes, RM (Metropolitana)","Vitacura, RM (Metropolitana)"]
 
-comuna=["Providencia, RM (Metropolitana)","Santiago, RM (Metropolitana)","Ñuñoa, RM (Metropolitana)","La Reina, RM (Metropolitana)","Las Condes, RM (Metropolitana)"]
+#comuna=["La Reina, RM (Metropolitana)","La Florida, RM (Metropolitana)"]
 
 df_final=[]
 for n in comuna:
@@ -19,7 +22,11 @@ for n in comuna:
     #Buscamos el boton para seleccionar, luego seleccionamos "arriendos" o "venta"
     driver.find_element_by_id('operations-dropdown').find_element_by_class_name('searchbox-dropdown__content').click()
     #driver.find_element_by_css_selector('li[data-id="arriendo"]').click()
-    driver.find_element_by_css_selector('li[data-id="venta"]').click() #Aca debes cambiar por arriendo o venta
+    #searchbox-dropdown__content
+    driver.find_element_by_css_selector('li[data-id="arriendo"]').click() #Aca debes cambiar por arriendo o venta
+
+    #driver.find_element_by_id('categories-dropdown').find_element_by_class_name('searchbox-dropdown__content').click()
+    #driver.find_element_by_css_selector('li[data-id="arriendo_casa"]').click()
 
     #Buscamos el cuadro de texto para ingresar la comuna
     where = driver.find_element_by_class_name('searchbox-autocomplete__field')
@@ -28,12 +35,23 @@ for n in comuna:
     driver.find_element_by_css_selector('li.searchbox-autocomplete-list__item').click() #seleccionamos la primera opcion (que será la que escribimos)
     driver.find_element_by_id('search-submit').click() #Buscar
 
+    driver.find_element_by_class_name("filters__BEDROOMS").find_element_by_class_name("custom-range-filter__value").send_keys("2") 
+    driver.find_element_by_class_name("filters__BEDROOMS").find_element_by_class_name("custom-range-filter__actions").click() 
+
+    driver.find_element_by_id('toPrice').send_keys("450000") 
+    driver.find_element_by_class_name("filters__price").find_element_by_class_name("price-filter__actions").click() 
+
+    #driver.find_element_by_class_name("price-filter__actions").click() 
+    
+
+
     #Ahora con la busqueda cargada extraemos 100 resultados
 
     nb=[]
+    largo=len(nb)
+    cantidad=100
 
-
-    while len(nb) < 100: #hasta que el DF tenga mínimo 100 elementos.
+    while largo < cantidad: #hasta que el DF tenga mínimo 100 elementos
         elems = driver.find_elements_by_class_name("results-item") # el contenedor de los resultados.
         for e in elems:
             try:
@@ -46,11 +64,14 @@ for n in comuna:
                 link=e.find_element_by_css_selector('a.item__info-link').get_attribute("href")
                 precio=e.find_element_by_tag_name("div.price__container").text
                 nb.append({"Precio":precio,"Direccion":direccion[2].text,"Superficie":superficie,"Dormitorios":dormitorios,"Baños":baños,"Link":link})
-
+                largo=len(nb)
             except:
                 print("Error")
                 
-        driver.find_element_by_css_selector('.andes-pagination__button--next').click() #vamos a la siguiente página.
+        try:
+            driver.find_element_by_css_selector('.andes-pagination__button--next').click() #vamos a la siguiente página.
+        except:
+            largo=cantidad
 
     driver.close()
     df = pd.DataFrame(nb)
@@ -60,13 +81,13 @@ for n in comuna:
     df["Valor UF"]=0
     df["Valor Pesos"]=0
     #Los valores vienen mixtos por lo que se debe serparar por Pesos y otro por UFs
-    for j in range (len(df)):
+    """for j in range (len(df)):
         l=int(j+1)
         x=int(df["Precio"][j:l].str.find("UF "))
         df["Valor UF"][j]=df["Precio"][j][x:]
         y=int(df["Precio"][j:l].str.find("$ "))
         df["Valor Pesos"][j]=df["Precio"][j][y:]
-
+    """
     if len(df_final)>0:
         df_final=pd.concat([df, df_final], ignore_index=True)
     else: 
@@ -80,6 +101,10 @@ df_final=df_final.sort_values(by=["Valor Pesos"]).reset_index(drop=True)
 archivo="tu_archivo.csv"
 
 df_final.to_csv(archivo,index=False,sep=";")
+print("Fin del programa")
 
 #Listo consigue el mejor precio
     
+
+
+# %%
